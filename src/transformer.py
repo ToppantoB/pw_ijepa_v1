@@ -16,7 +16,7 @@ class PatchEmbedding(nn.Module):
 class PositionalEncoding(nn.Module):
   def __init__(self, embed_dim, seq_len):
     super().__init__()
-    self.pos_embed = nn.Parameter(torch.randn(1, seq_len + 1, embed_dim))
+    self.pos_embed = nn.Parameter(torch.randn(1, seq_len + 1, embed_dim) * 0.02 )
     
   def forward(self, x):
     return x + self.pos_embed
@@ -38,13 +38,16 @@ class TransformerEncoderBlock(nn.Module):
     self.mlp = nn.Sequential(
       nn.Linear(embed_dim, mlp_dim),
       nn.GELU(),
-      nn.Linear(mlp_dim, embed_dim)
+      nn.Dropout(0.1),
+      nn.Linear(mlp_dim, embed_dim),
+      nn.Dropout(0.1),
     )
     self.norm1 = nn.LayerNorm(embed_dim)
     self.norm2 = nn.LayerNorm(embed_dim)
+    self.dropout = nn.Dropout(0.1)
 
   def forward(self, x):
-    x = x + self.attn(self.norm1(x))
+    x = x + self.dropout(self.attn(self.norm1(x)))
     x = x + self.mlp(self.norm2(x))
     return x
     
@@ -60,6 +63,7 @@ class VisionTransformer(nn.Module):
       self.cls_token = nn.Parameter(torch.randn(1, 1, embed_dim) * 0.02 )
       self.mlp_head = nn.Linear(embed_dim, num_classes)
       self.norm = nn.LayerNorm(embed_dim)
+      self.pos_drop = nn.Dropout(0.1)
       
     def forward(self, x):
       B = x.size(0)
@@ -68,6 +72,7 @@ class VisionTransformer(nn.Module):
       x = torch.cat((cls_tokens, x), dim=1)
       
       x = self.pos_encoding(x)
+      x = self.pos_drop(x)
       
       for block in self.transformer_blocks:
         x = block(x)

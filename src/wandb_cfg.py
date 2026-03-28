@@ -8,9 +8,8 @@ run = wandb.init(
     project="pw_vit-v1",
     # Track hyperparameters and run metadata.
     config={
-        "learning_rate": 0.02,
-        "architecture": "CNN",
+        "architecture": "ViT",
         "dataset": "CIFAR-10",
-        "epochs": 3,
+        "epochs": 100,
     },
 )
