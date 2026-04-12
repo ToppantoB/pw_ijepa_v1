@@ -13,7 +13,7 @@ eval_transform = transforms.Compose(
 )
 
 train_labeled_ds = datasets.STL10(
-    root="./data", split="train", transform=eval_transform
+    root="./data", split="train", transform=eval_transform, download=True
 )
 
 test_ds = datasets.STL10(root="./data", split="test", transform=eval_transform)
