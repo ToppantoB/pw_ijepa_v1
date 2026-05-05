@@ -40,6 +40,7 @@ class I_JEPA(nn.Module):
             num_heads=encoder_num_heads,
             depth=encoder_depth,
             mlp_dim=encoder_mlp_dim,
+            drop_path_rate=0.0,
         )
 
         # use the same weights in the target_encoder as in the context encoder...

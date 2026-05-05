@@ -2,6 +2,7 @@ import random
 import numpy as np
 import torch
 import math
+from config import CONFIG
 
 
 def get_block(image_size=96, patch_size=8, block_size=4):
@@ -123,3 +124,49 @@ def update_target_encoder(context_encoder, target_encoder, tau):
             
 def get_current_tau(step, total_steps, base_tau=0.996, max_tau=1.0):
     return max_tau - (max_tau - base_tau) * (1 + math.cos(math.pi * step / total_steps)) / 2
+
+def get_current_weight_decay(step, total_steps, base_wd=0.04, max_wd=0.4):
+    return max_wd + 0.5 * (base_wd - max_wd) * (1 + math.cos(math.pi * step / total_steps))
+
+def compute_linear_weight_decay(step, total_steps, base_wd=0.04, max_wd=0.4):
+    """Calculates the current weight decay using a linear increase schedule."""
+    progress = min(step / total_steps, 1.0)
+    
+    return base_wd + progress * (max_wd - base_wd)
+
+def get_parameter_groups(model):
+    decay_params = []
+    no_decay_params = []
+
+    # Separate encoder parameters
+    for name, param in model.context_encoder.named_parameters():
+        if not param.requires_grad:
+            continue
+        
+        # Exclude biases and 1D parameters (e.g., LayerNorm weights) from decay
+        if param.ndim <= 1 or name.endswith(".bias"):
+            no_decay_params.append(param)
+        else:
+            decay_params.append(param)
+
+    # Construct the optimizer parameter groups
+    return [
+        {
+            "params": decay_params,
+            "lr": CONFIG.base_learning_rate,
+            "weight_decay": 0.01, # Initial weight decay
+            "apply_wd_schedule": True 
+        },
+        {
+            "params": no_decay_params,
+            "lr": CONFIG.base_learning_rate,
+            "weight_decay": 0.0,
+            "apply_wd_schedule": False
+        },
+        {
+            "params": model.predictor.parameters(),
+            "lr": CONFIG.base_learning_rate * CONFIG.predictor_lr_multiplier,
+            "weight_decay": 0.0,
+            "apply_wd_schedule": False
+        },
+    ]

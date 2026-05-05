@@ -7,35 +7,35 @@ class Config:
     img_size: int = 96
     """The size of the input square image (e.g., 96 for a 96x96 image)."""
 
-    patch_size: int = 8
+    patch_size: int = 4
     """The side length of the square patches the image is divided into."""
 
-    block_size: int = 3
+    block_size: int = 8
     """The side length of the square blocks in patches."""
 
-    number_of_blocks: int = 3
+    number_of_blocks: int = 5
     """The number of target blocks fot I-JEPA's training"""
         
-    min_context_size: int = 10
+    min_context_size: int = 20
     """Width of the context image in patches after initial crop"""
     
     # Training Settings
-    epochs: int = 200
+    epochs: int = 300
     """Number of epochs to train for"""
     
     batch_size: int = 128
     """The training batch size"""
     
-    warmup_steps: int = 10
+    warmup_steps: int = 20
     """Warmup steps for training"""
     
-    tau_base: float = 0.996
+    tau_base: float = 0.993
     """Initial value of Tau for the EMA"""
     
     tau_end: float = 1.0
     """End value of Tau for the EMA"""
     
-    base_learning_rate: float = 2e-4
+    base_learning_rate: float = 1.5e-4
     """Base learning rate for Context Encoder"""
     
     grad_accum_steps: int = 2
@@ -43,6 +43,12 @@ class Config:
     
     predictor_lr_multiplier = 2
     """Factor to increase the learning rate predictor by"""
+
+    weight_decay_base = 0.01
+    """Start weight decay"""
+
+    weight_decay_max = 0.06
+    """End weight decay"""
     
     # Encoder Settings
     encoder_embed_dim: int = 192
@@ -61,7 +67,7 @@ class Config:
     predictor_embed_dim: int = 192
     """The dimension of the latent space for the predictor."""
 
-    predictor_depth: int = 3
+    predictor_depth: int = 2
     """The number of transformer layers in the predictor."""
 
     predictor_mlp_dim: int = 768
@@ -71,7 +77,7 @@ class Config:
     """Number of self-attention heads in each predictor block."""
     
     # Additional
-    run_version: int = 22
-    """Version of the current run"""
+    run_version: int = 51
+    """Version of the current run for WandB logs and artifact naming"""
 
 CONFIG = Config()

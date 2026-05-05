@@ -1,6 +1,13 @@
 from i_jepa import I_JEPA
 from config import CONFIG
-from utils import get_blocks, update_target_encoder, get_image_crop, get_current_tau
+from utils import (
+    get_blocks,
+    update_target_encoder,
+    get_image_crop,
+    get_current_tau,
+    compute_linear_weight_decay,
+    get_parameter_groups
+)
 from eval_scripts.eval import do_eval
 
 import wandb
@@ -10,8 +17,8 @@ warnings.filterwarnings(
     "ignore", category=UserWarning, module="torch.optim.lr_scheduler"
 )
 
-# import pynvml
-# import sys
+import pynvml
+import sys
 import torch.optim as optim
 import os
 import numpy as np
@@ -23,8 +30,8 @@ from dataset import get_train_loader
 
 from wandb_cfg import wandb_logger
 
-# pynvml.nvmlInit()
-# gpu_handle = pynvml.nvmlDeviceGetHandleByIndex(0)
+pynvml.nvmlInit()
+gpu_handle = pynvml.nvmlDeviceGetHandleByIndex(0)
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
@@ -59,19 +66,21 @@ def main():
 
     # learning_rate = CONFIG.base_learning_rate * (CONFIG.batch_size / 32)
 
-    optimizer = optim.AdamW(
-        [
-            {
-                "params": model.context_encoder.parameters(),
-                "lr": CONFIG.base_learning_rate,
-            },
-            {
-                "params": model.predictor.parameters(),
-                "lr": CONFIG.base_learning_rate * CONFIG.predictor_lr_multiplier,
-            },
-        ],
-        weight_decay=0.01,
-    )
+    # optimizer = optim.AdamW(
+    #     [
+    #         {
+    #             "params": model.context_encoder.parameters(),
+    #             "lr": CONFIG.base_learning_rate,
+    #         },
+    #         {
+    #             "params": model.predictor.parameters(),
+    #             "lr": CONFIG.base_learning_rate * CONFIG.predictor_lr_multiplier,
+    #         },
+    #     ],
+    #     weight_decay=0.01,
+    # )
+
+    optimizer = optim.AdamW(get_parameter_groups(model))
 
     steps_per_epoch = len(train_loader) / CONFIG.grad_accum_steps
     actual_warmup_steps = int(CONFIG.warmup_steps * steps_per_epoch)
@@ -139,17 +148,31 @@ def main():
                     model.context_encoder, model.target_encoder, tau=current_tau
                 )
 
-            if step % 100 == 0:
-                # temp = pynvml.nvmlDeviceGetTemperature(
-                #     gpu_handle, pynvml.NVML_TEMPERATURE_GPU
+                #################
+                # current_wd = compute_linear_weight_decay(
+                #     global_step,
+                #     total_steps,
+                #     CONFIG.weight_decay_base,
+                #     CONFIG.weight_decay_max,
                 # )
-                # if temp > 87:
-                #     print(
-                #         f"CRITICAL: GPU temperature reached {temp}°C. Stopping training."
-                #     )
+                
+                # for param_group in optimizer.param_groups:
+                #     if param_group.get("apply_wd_schedule", False):
+                #         param_group["weight_decay"] = current_wd
+                ##################
 
-                #     pynvml.nvmlShutdown()
-                #     sys.exit(1)
+
+            if step % 100 == 0:
+                temp = pynvml.nvmlDeviceGetTemperature(
+                    gpu_handle, pynvml.NVML_TEMPERATURE_GPU
+                )
+                if temp > 87:
+                    print(
+                        f"CRITICAL: GPU temperature reached {temp}°C. Stopping training."
+                    )
+
+                    pynvml.nvmlShutdown()
+                    sys.exit(1)
 
                 features = metrics[1].to("cpu")
 
@@ -173,7 +196,7 @@ def main():
                 CONFIG.run_version, param_version, eval_type="knn", save_type=save_type
             )
 
-        if epoch % 20 == 0:
+        if epoch % 20 == 0 or (epoch + 1) == CONFIG.epochs:
             lin_probe_acc = do_eval(
                 CONFIG.run_version,
                 param_version,
@@ -181,7 +204,7 @@ def main():
                 save_type=save_type,
             )
 
-        wandb_logger.log(
+        wandb_logger.log(   
             {
                 "Loss": avg_loss,
                 "Standard deviation of img tensors": sum(std_devs_accum_list)
@@ -196,7 +219,7 @@ def main():
         std_devs_accum_list = []
         accum_lost = 0
 
-    # pynvml.nvmlShutdown()
+    pynvml.nvmlShutdown()
     wandb_logger.finish()
 
 
