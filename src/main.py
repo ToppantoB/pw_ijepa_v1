@@ -17,7 +17,7 @@ warnings.filterwarnings(
     "ignore", category=UserWarning, module="torch.optim.lr_scheduler"
 )
 
-import pynvml
+# import pynvml
 import sys
 import torch.optim as optim
 import os
@@ -30,8 +30,8 @@ from dataset import get_train_loader
 
 from wandb_cfg import wandb_logger
 
-pynvml.nvmlInit()
-gpu_handle = pynvml.nvmlDeviceGetHandleByIndex(0)
+# pynvml.nvmlInit()
+# gpu_handle = pynvml.nvmlDeviceGetHandleByIndex(0)
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
@@ -163,16 +163,16 @@ def main():
 
 
             if step % 100 == 0:
-                temp = pynvml.nvmlDeviceGetTemperature(
-                    gpu_handle, pynvml.NVML_TEMPERATURE_GPU
-                )
-                if temp > 87:
-                    print(
-                        f"CRITICAL: GPU temperature reached {temp}°C. Stopping training."
-                    )
+                # temp = pynvml.nvmlDeviceGetTemperature(
+                #     gpu_handle, pynvml.NVML_TEMPERATURE_GPU
+                # )
+                # if temp > 87:
+                #     print(
+                #         f"CRITICAL: GPU temperature reached {temp}°C. Stopping training."
+                #     )
 
-                    pynvml.nvmlShutdown()
-                    sys.exit(1)
+                #     pynvml.nvmlShutdown()
+                #     sys.exit(1)
 
                 features = metrics[1].to("cpu")
 
@@ -219,7 +219,7 @@ def main():
         std_devs_accum_list = []
         accum_lost = 0
 
-    pynvml.nvmlShutdown()
+    # pynvml.nvmlShutdown()
     wandb_logger.finish()
 
 
