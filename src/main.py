@@ -5,7 +5,6 @@ from utils import (
     update_target_encoder,
     get_image_crop,
     get_current_tau,
-    compute_linear_weight_decay,
     get_parameter_groups
 )
 from eval_scripts.eval import do_eval
@@ -63,22 +62,6 @@ def main():
     model.to("cuda")
 
     total_steps = CONFIG.epochs * (len(train_loader) / CONFIG.grad_accum_steps)
-
-    # learning_rate = CONFIG.base_learning_rate * (CONFIG.batch_size / 32)
-
-    # optimizer = optim.AdamW(
-    #     [
-    #         {
-    #             "params": model.context_encoder.parameters(),
-    #             "lr": CONFIG.base_learning_rate,
-    #         },
-    #         {
-    #             "params": model.predictor.parameters(),
-    #             "lr": CONFIG.base_learning_rate * CONFIG.predictor_lr_multiplier,
-    #         },
-    #     ],
-    #     weight_decay=0.01,
-    # )
 
     optimizer = optim.AdamW(get_parameter_groups(model))
 
@@ -148,21 +131,8 @@ def main():
                     model.context_encoder, model.target_encoder, tau=current_tau
                 )
 
-                #################
-                # current_wd = compute_linear_weight_decay(
-                #     global_step,
-                #     total_steps,
-                #     CONFIG.weight_decay_base,
-                #     CONFIG.weight_decay_max,
-                # )
-                
-                # for param_group in optimizer.param_groups:
-                #     if param_group.get("apply_wd_schedule", False):
-                #         param_group["weight_decay"] = current_wd
-                ##################
-
-
             if step % 100 == 0:
+                # GPU monitoring for local training...
                 # temp = pynvml.nvmlDeviceGetTemperature(
                 #     gpu_handle, pynvml.NVML_TEMPERATURE_GPU
                 # )
@@ -173,6 +143,7 @@ def main():
 
                 #     pynvml.nvmlShutdown()
                 #     sys.exit(1)
+                # ...GPU monitoring end
 
                 features = metrics[1].to("cpu")
 

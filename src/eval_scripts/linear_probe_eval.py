@@ -6,7 +6,7 @@ from .test_models import get_encoder
 from .test_loaders import train_labeled_loader as train_loader, test_loader
 
 
-def linear_probe_train(encoder):
+def get_linear_head(encoder):
     epochs = 100
     print("Linear probe eval in progress...")
 
@@ -67,5 +67,5 @@ def linear_probe_eval(linear_head, encoder):
 def get_linear_probe_accuracy(path_to_params, encoder_config):
     context_encoder = get_encoder(path_to_params, encoder_config)
 
-    linear_head = linear_probe_train(context_encoder)
+    linear_head = get_linear_head(context_encoder)
     return linear_probe_eval(linear_head, context_encoder)

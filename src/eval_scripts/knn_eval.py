@@ -55,5 +55,3 @@ def get_knn_accuracy(path_to_params, encoder_config):
   acc = knn_evaluate(train_features, train_labels, test_features, test_labels)
 
   return acc
-
-# get_knn_accuracy("outputs/v14/ijepa_stl10_162.pt")

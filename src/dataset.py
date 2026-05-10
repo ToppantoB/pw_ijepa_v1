@@ -26,4 +26,3 @@ def get_train_loader():
     return torch.utils.data.DataLoader(
         dataset, batch_size=CONFIG.batch_size, drop_last=True
     )
-    # return torch.utils.data.DataLoader(dataset, batch_size=CONFIG.batch_size, num_workers=2)

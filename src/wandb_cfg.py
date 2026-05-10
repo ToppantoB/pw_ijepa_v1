@@ -39,8 +39,6 @@ wandb_logger = wandb.init(
             "tau_type": "fix",
             "encoder_learning_rate": CONFIG.base_learning_rate,
             "predictor_learning_rate_multiplier": CONFIG.predictor_lr_multiplier,
-            "weight_decay_base": CONFIG.weight_decay_base,
-            "weight_decay_max": CONFIG.weight_decay_max,
         },
     },
 )

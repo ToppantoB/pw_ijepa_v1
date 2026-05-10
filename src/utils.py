@@ -24,12 +24,6 @@ def get_block(image_size=96, patch_size=8, block_size=4):
     horizontal_start = random.randint(0, image_size_in_patches - block_size)
     vertical_start = random.randint(0, image_size_in_patches - block_size)
 
-    # start_idx = v_start * image_size + h_start
-    # first_row = np.arange(start_idx, start_idx + patch_size)
-
-    # horizontal_start = random.randint(1, image_size - (patch_size - 1))
-    # vertical_start = random.randint(1, image_size - (patch_size - 1))
-
     start_idx = vertical_start * image_size_in_patches + horizontal_start
 
     first_row = torch.arange(
@@ -41,11 +35,6 @@ def get_block(image_size=96, patch_size=8, block_size=4):
     patch_matrix = first_row + torch.arange(block_size, dtype=int)[:, None] * image_size_in_patches
 
     return patch_matrix.flatten()
-
-
-# TODO: check if zero-indexing is required in ViT
-# TODO: maybe prevent having patches on the edge?
-
 
 def get_blocks(image_size=96, patch_size=8, block_size=4, number_of_blocks=2):
     """Returns a list of patch indices of a random "square-shaped" block from a "sqare-shaped" image
@@ -124,15 +113,6 @@ def update_target_encoder(context_encoder, target_encoder, tau):
             
 def get_current_tau(step, total_steps, base_tau=0.996, max_tau=1.0):
     return max_tau - (max_tau - base_tau) * (1 + math.cos(math.pi * step / total_steps)) / 2
-
-def get_current_weight_decay(step, total_steps, base_wd=0.04, max_wd=0.4):
-    return max_wd + 0.5 * (base_wd - max_wd) * (1 + math.cos(math.pi * step / total_steps))
-
-def compute_linear_weight_decay(step, total_steps, base_wd=0.04, max_wd=0.4):
-    """Calculates the current weight decay using a linear increase schedule."""
-    progress = min(step / total_steps, 1.0)
-    
-    return base_wd + progress * (max_wd - base_wd)
 
 def get_parameter_groups(model):
     decay_params = []

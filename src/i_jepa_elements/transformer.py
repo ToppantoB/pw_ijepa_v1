@@ -4,7 +4,7 @@ import numpy as np
 
 
 class PatchEmbedding(nn.Module):
-    def __init__(self, img_size=96, patch_size=8, in_channels=3, embed_dim=768):
+    def __init__(self, patch_size=8, in_channels=3, embed_dim=768):
         super().__init__()
         self.patch_size = patch_size
         self.proj = nn.Conv2d(
@@ -12,7 +12,6 @@ class PatchEmbedding(nn.Module):
         )
 
     def forward(self, x):
-        B, C, H, W = x.shape
         x = self.proj(x).flatten(2).transpose(1, 2)
         return x
 
@@ -20,7 +19,6 @@ class PatchEmbedding(nn.Module):
 class PositionalEncoding(nn.Module):
     def __init__(self, embed_dim, seq_len):
         super().__init__()
-        # self.pos_embed = nn.Parameter(torch.randn(1, seq_len + 1, embed_dim) * 0.02 )   # +1 for the cls token
         self.pos_embed = nn.Parameter(torch.randn(1, seq_len, embed_dim) * 0.02)
 
     def forward(self, x):
@@ -36,7 +34,7 @@ class MultiHeadAttention(nn.Module):
         return self.attn(x, x, x)[0]
 
 
-# Drop path from original I-JEPA codebase
+# Drop path copied from original I-JEPA codebase -- start
 def drop_path(x, drop_prob: float = 0.0, training: bool = False):
     if drop_prob == 0.0 or not training:
         return x
@@ -59,7 +57,7 @@ class DropPath(nn.Module):
 
     def forward(self, x):
         return drop_path(x, self.drop_prob, self.training)
-
+# Drop path copied from original I-JEPA codebase -- end
 
 class TransformerEncoderBlock(nn.Module):
     def __init__(self, embed_dim, num_heads, mlp_dim, drop_path_rate):
@@ -68,16 +66,13 @@ class TransformerEncoderBlock(nn.Module):
         self.mlp = nn.Sequential(
             nn.Linear(embed_dim, mlp_dim),
             nn.GELU(),
-            nn.Dropout(0),
             nn.Linear(mlp_dim, embed_dim),
-            nn.Dropout(0),
         )
         self.norm1 = nn.LayerNorm(embed_dim)
         self.norm2 = nn.LayerNorm(embed_dim)
         self.drop_path = (
             DropPath(drop_path_rate) if drop_path_rate > 0.0 else nn.Identity()
         )
-        self.dropout = nn.Dropout(0)
 
     def forward(self, x):
         x = x + self.drop_path(self.attn(self.norm1(x)))
@@ -98,18 +93,14 @@ class VisionTransformerBase(nn.Module):
         drop_path_rate=0.1,
     ):
         super().__init__()
-        self.patch_embedding = PatchEmbedding(img_size, patch_size, 3, embed_dim)
+        self.patch_embedding = PatchEmbedding(patch_size, 3, embed_dim)
 
         self.pos_embed = nn.Parameter(
             torch.randn(1, (img_size // patch_size) ** 2, embed_dim) * 0.02
         )
 
-        # values = np.arange(0, 144).reshape(1, 144, 1)
-        # self.pos_embed = torch.from_numpy(np.broadcast_to(values, (1, 144, 192))).to("cuda")
-
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, depth)]
 
-        # self.pos_encoding = PositionalEncoding(embed_dim, (img_size // patch_size) ** 2)
         self.transformer_blocks = nn.ModuleList(
             [
                 TransformerEncoderBlock(
@@ -118,8 +109,7 @@ class VisionTransformerBase(nn.Module):
                 for i in range(depth)
             ]
         )
-        # self.cls_token = nn.Parameter(torch.randn(1, 1, embed_dim) * 0.02 )
-        # self.mlp_head = nn.Linear(embed_dim, num_classes)
+        
         self.norm = nn.LayerNorm(embed_dim)
         self.pos_drop = nn.Dropout(0)
 

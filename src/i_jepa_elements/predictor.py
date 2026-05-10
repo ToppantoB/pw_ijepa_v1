@@ -8,12 +8,12 @@ class Predictor(nn.Module):
     ):
         super().__init__()
 
-        dpr = [x.item() for x in torch.linspace(0, drop_path_rate, depth)]
+        _drop_path_rate = [x.item() for x in torch.linspace(0, drop_path_rate, depth)]
 
         self.transformer_blocks = nn.ModuleList(
             [
                 TransformerEncoderBlock(
-                    embed_dim, num_heads, mlp_dim, drop_path_rate=dpr[i]
+                    embed_dim, num_heads, mlp_dim, drop_path_rate=_drop_path_rate[i]
                 )
                 for i in range(depth)
             ]

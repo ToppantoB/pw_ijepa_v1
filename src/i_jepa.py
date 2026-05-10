@@ -43,10 +43,6 @@ class I_JEPA(nn.Module):
             drop_path_rate=0.0,
         )
 
-        # use the same weights in the target_encoder as in the context encoder...
-        # self.target_encoder.load_state_dict(self.context_encoder.state_dict())
-
-        # ... and freeze them
         for param in self.target_encoder.parameters():
             param.requires_grad = False
 
@@ -117,26 +113,12 @@ class I_JEPA(nn.Module):
             # ... extract the targets and ...
             target_size = current_target.shape[0]
             current_prediction = predictor_out[:, -target_size:, :]
-
-            # normalize to prevent model from shrinking the vectors to reduce error
-            # normalized_prediction = nn.functional.normalize(
-            #     current_prediction, p=2, dim=-1
-            # )
-            # normalized_ground_truth = nn.functional.normalize(
-            #     current_ground_truth, p=2, dim=-1
-            # )
-
-            # # ... calculate the loss
-            # loss_tensor = nn.functional.mse_loss(
-            #     normalized_prediction, normalized_ground_truth, reduction="none"
-            # )
             
+            # ... calculate the loss
             block_loss = nn.functional.mse_loss(
                 current_prediction, current_ground_truth, reduction="mean"
             )
-            
-            # block_loss = loss_tensor.sum(dim=-1).mean()
-            
+                        
             total_loss += block_loss
 
         return total_loss / num_blocks, (std_dev_list, features_list)

@@ -7,20 +7,20 @@ class Config:
     img_size: int = 96
     """The size of the input square image (e.g., 96 for a 96x96 image)."""
 
-    patch_size: int = 4
+    patch_size: int = 8
     """The side length of the square patches the image is divided into."""
 
-    block_size: int = 8
+    block_size: int = 4
     """The side length of the square blocks in patches."""
 
     number_of_blocks: int = 5
     """The number of target blocks fot I-JEPA's training"""
         
-    min_context_size: int = 20
+    min_context_size: int = 10
     """Width of the context image in patches after initial crop"""
     
     # Training Settings
-    epochs: int = 300
+    epochs: int = 220
     """Number of epochs to train for"""
     
     batch_size: int = 128
@@ -29,7 +29,7 @@ class Config:
     warmup_steps: int = 20
     """Warmup steps for training"""
     
-    tau_base: float = 0.993
+    tau_base: float = 0.98
     """Initial value of Tau for the EMA"""
     
     tau_end: float = 1.0
@@ -43,12 +43,6 @@ class Config:
     
     predictor_lr_multiplier = 2
     """Factor to increase the learning rate predictor by"""
-
-    weight_decay_base = 0.01
-    """Start weight decay"""
-
-    weight_decay_max = 0.06
-    """End weight decay"""
     
     # Encoder Settings
     encoder_embed_dim: int = 192
@@ -77,7 +71,7 @@ class Config:
     """Number of self-attention heads in each predictor block."""
     
     # Additional
-    run_version: int = 51
+    run_version: int = 58
     """Version of the current run for WandB logs and artifact naming"""
 
 CONFIG = Config()
