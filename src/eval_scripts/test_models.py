@@ -12,7 +12,7 @@ def get_encoder(path_to_params, encoder_config, device):
       device (str or torch.device): The device (e.g., 'cuda' or 'cpu') to perform computations on.
 
     Returns:
-      ContextEncoder: The initialized encoder model, loaded with the specified weights and moved to the GPU.
+      ContextEncoder: The initialized encoder model, loaded with the specified weights and moved to the specified device.
     """
     context_encoder = ContextEncoder(
         img_size=CONFIG.img_size,

@@ -1,12 +1,16 @@
 import wandb
 from config import CONFIG
 
-# Start a new wandb run to track this script.
 def get_wandb_logger():
+    """Initializes and returns a Weights & Biases (wandb) logger for tracking the training process of the I-JEPA model.
+    
+    returns:
+        wandb.run: An instance of the wandb run, which can be used to log metrics, artifacts, and other information during training.
+    """
     return wandb.init(
         entity="toppantob_org",
         project="pw-i_jepa-v1",
-        name=f"Run v-{CONFIG.run_version}",
+        name=f"Presentation Run v-{CONFIG.run_version}",
         config={
             "architecture": "I-JEPA",
             "dataset": "STL-10",
@@ -34,7 +38,7 @@ def get_wandb_logger():
                 "warmup_steps": CONFIG.warmup_steps,
                 "batch_size": CONFIG.batch_size,
                 "tau": CONFIG.tau_base,
-                "tau_type": "fix",
+                "tau_type": "dynamic",
                 "encoder_learning_rate": CONFIG.base_learning_rate,
                 "predictor_learning_rate_multiplier": CONFIG.predictor_lr_multiplier,
             },

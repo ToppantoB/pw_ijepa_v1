@@ -14,6 +14,9 @@ def get_block(image_size=96, patch_size=8, block_size=4):
       image_size (int, optional): The width of the image in pixels. Defaults to 96.
       patch_size (int, optional): Width of the patch in pixels. Defaults to 8.
       patch_size (int, optional): Width of the block. Defaults to 4.
+      
+    Returns:
+      torch.Tensor: A tensor containing the patch indices corresponding to the randomly selected block.
     """
     if (patch_size * block_size) > image_size:
         raise Exception("patch_size * block_size cannot be larger than image_size")
@@ -45,7 +48,10 @@ def get_blocks(image_size=96, patch_size=8, block_size=4, number_of_blocks=2):
       image_size (int, optional): The width of the image in pixels. Defaults to 96.
       patch_size (int, optional): Width of the patch in pixels. Defaults to 8.
       block_size (int, optional): Width of the block. Defaults to 4.
-      number_of_patches (int, optional): Number of patches to return. Defaults to 2.
+      number_of_blocks (int, optional): Number of blocks to return. Defaults to 2.
+      
+    Returns:
+        torch.Tensor: A tensor containing the patch indices corresponding to the randomly selected blocks.
     """
     target_blocks = [
         get_block(image_size, patch_size, block_size) for _ in range(number_of_blocks)
@@ -59,6 +65,9 @@ def get_image_crop(image_size=12, min_img_size_after_crop=10):
     Args:
       image_size (int, optional): The width of the image in patches. Defaults to 12.
       img_size_after_crop (int, optional): The width of the image in patches after the crop. Defaults to 10.
+      
+    Returns:
+      torch.Tensor: A tensor containing the patch indices corresponding to the cropped area of the image.
     """
     img_size_after_crop = np.random.randint(min_img_size_after_crop, image_size + 1)
     
@@ -67,6 +76,7 @@ def get_image_crop(image_size=12, min_img_size_after_crop=10):
     rows_to_crop = []
     cols_to_crop = []
     
+    # initialize the vertical and horizontal crop boundaries to the full image size
     v_start, v_end = 0, image_size -1
     h_start, h_end = 0, image_size -1
     
@@ -94,7 +104,8 @@ def get_image_crop(image_size=12, min_img_size_after_crop=10):
     first_col_idx = first_row_idx * image_size
     
     patches_to_crop = []
-        
+    
+    # calculate the patch indices based on the selected rows and columns to crop
     for row in rows_to_crop:
         patches_to_crop.append(first_row_idx + (image_size * row))
     
@@ -150,6 +161,7 @@ def get_parameter_groups(model):
         if not param.requires_grad:
             continue
         
+        # exclude parameters that are 1-dimensional (like LayerNorm weights) or biases from weight decay
         if param.ndim <= 1 or name.endswith(".bias"):
             no_decay_params.append(param)
         else:
@@ -180,6 +192,12 @@ def get_project_root(anchor_file="requirements.txt"):
     """
     Traverses upwards from the current file to find the project root 
     based on the presence of a specific anchor file/directory.
+    
+    Args:
+      anchor_file (str, optional): The name of the file or directory that indicates the project root. Defaults to "requirements.txt".
+      
+    Returns:
+      Path: The path to the project root.
     """
     current_path = Path(__file__).resolve()
     for parent in [current_path] + list(current_path.parents):
@@ -191,6 +209,9 @@ def get_project_root(anchor_file="requirements.txt"):
 def get_compute_device():
     """
     Returns the available computational device. Shows a warning in case CUDA is not available.
+    
+    Returns:
+      str: The device to perform computations on, either "cuda" or "cpu".
     """
     if torch.cuda.is_available():
         return "cuda"

@@ -4,6 +4,7 @@ import numpy as np
 
 
 class PatchEmbedding(nn.Module):
+    """Converts input images into patch embeddings using a convolutional layer."""
     def __init__(self, patch_size=8, in_channels=3, embed_dim=768):
         super().__init__()
         self.patch_size = patch_size
@@ -17,6 +18,7 @@ class PatchEmbedding(nn.Module):
 
 
 class PositionalEncoding(nn.Module):
+    """Adds positional encoding to the input tensor."""
     def __init__(self, embed_dim, seq_len):
         super().__init__()
         self.pos_embed = nn.Parameter(torch.randn(1, seq_len, embed_dim) * 0.02)
@@ -26,6 +28,7 @@ class PositionalEncoding(nn.Module):
 
 
 class MultiHeadAttention(nn.Module):
+    """Implements multi-head self-attention mechanism."""
     def __init__(self, embed_dim, num_heads):
         super().__init__()
         self.attn = nn.MultiheadAttention(embed_dim, num_heads, batch_first=True)
@@ -60,6 +63,7 @@ class DropPath(nn.Module):
 # Drop path copied from original I-JEPA codebase -- end
 
 class TransformerEncoderBlock(nn.Module):
+    """Implements a single transformer encoder block consisting of multi-head attention and a feed-forward network."""
     def __init__(self, embed_dim, num_heads, mlp_dim, drop_path_rate):
         super().__init__()
         self.attn = MultiHeadAttention(embed_dim, num_heads)
@@ -82,6 +86,8 @@ class TransformerEncoderBlock(nn.Module):
 
 
 class VisionTransformerBase(nn.Module):
+    """Base class for the Vision Transformer used in both the Target Encoder and Context Encoder. 
+        It includes patch embedding, positional encoding, and a series of transformer encoder blocks."""
     def __init__(
         self,
         img_size=96,
@@ -99,19 +105,18 @@ class VisionTransformerBase(nn.Module):
             torch.randn(1, (img_size // patch_size) ** 2, embed_dim) * 0.02
         )
 
-        dpr = [x.item() for x in torch.linspace(0, drop_path_rate, depth)]
+        _drop_path_rate = [x.item() for x in torch.linspace(0, drop_path_rate, depth)]
 
         self.transformer_blocks = nn.ModuleList(
             [
                 TransformerEncoderBlock(
-                    embed_dim, num_heads, mlp_dim, drop_path_rate=dpr[i]
+                    embed_dim, num_heads, mlp_dim, drop_path_rate=_drop_path_rate[i]
                 )
                 for i in range(depth)
             ]
         )
         
         self.norm = nn.LayerNorm(embed_dim)
-        self.pos_drop = nn.Dropout(0)
 
     def forward(self, x):
         raise NotImplementedError

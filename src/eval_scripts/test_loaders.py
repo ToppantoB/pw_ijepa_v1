@@ -22,5 +22,6 @@ train_labeled_ds = datasets.STL10(
 
 test_ds = datasets.STL10(root=data_path, split="test", transform=eval_transform)
 
+# initialize the train and test loaders for the linear probe evaluation
 train_labeled_loader = torch.utils.data.DataLoader(train_labeled_ds, batch_size=CONFIG.batch_size)
 test_loader = torch.utils.data.DataLoader(test_ds, batch_size=CONFIG.batch_size)

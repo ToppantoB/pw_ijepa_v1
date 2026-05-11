@@ -10,7 +10,6 @@ from utils import (
 )
 from eval_scripts.eval import do_eval
 
-import wandb
 import warnings
 
 warnings.filterwarnings(
@@ -35,11 +34,10 @@ from wandb_cfg import get_wandb_logger
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
-run_version = f"v{CONFIG.run_version}"
-knn_acc = 0
-
+# Set up output directories for saving model checkpoints
 project_root = get_project_root()
 
+run_version = f"v{CONFIG.run_version}"
 best_path = os.path.join(project_root, "outputs", run_version, "best")
 latest_path = os.path.join(project_root, "outputs", run_version, "latest")
 
@@ -56,9 +54,12 @@ def train(device):
     
     device (str or torch.device): The device (e.g., 'cuda' or 'cpu') to perform computations on.
     """
+    # load the training data
     train_loader = get_train_loader()
+    # initialize weights & biases logger
     wandb_logger = get_wandb_logger()
 
+    # initialize the model
     model = I_JEPA(
         img_size=CONFIG.img_size,
         patch_size=CONFIG.patch_size,
@@ -73,19 +74,23 @@ def train(device):
     )
     model.to(device)
 
-    total_steps = CONFIG.epochs * (len(train_loader) / CONFIG.grad_accum_steps)
+    steps_per_epoch = len(train_loader) / CONFIG.grad_accum_steps
+    
+    # calculate total training steps for tau scheduling
+    total_steps = CONFIG.epochs * steps_per_epoch
 
     optimizer = optim.AdamW(get_parameter_groups(model))
 
-    steps_per_epoch = len(train_loader) / CONFIG.grad_accum_steps
+    # adjust warmup steps to be in terms of actual optimizer steps (accounting for grad accumulation)
     actual_warmup_steps = int(CONFIG.warmup_steps * steps_per_epoch)
 
+    # set up learning rate schedulers: linear warmup followed by cosine decay
     warmup_scheduler = LinearLR(
         optimizer, start_factor=0.01, end_factor=1.0, total_iters=actual_warmup_steps
     )
     decay_scheduler = CosineAnnealingLR(
         optimizer,
-        T_max=((CONFIG.epochs * steps_per_epoch) - actual_warmup_steps),
+        T_max=(total_steps - actual_warmup_steps),
     )
 
     scheduler = SequentialLR(
@@ -94,10 +99,11 @@ def train(device):
         milestones=[actual_warmup_steps],
     )
 
+    # variables to track best loss and accuracy for saving checkpoints
     best_loss = np.inf
     accum_lost = 0
+    knn_acc = 0
     std_devs_accum_list = []
-    features = []
 
     for epoch in range(CONFIG.epochs):
         pbar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{CONFIG.epochs}")
@@ -106,11 +112,13 @@ def train(device):
         for step, (inputs, _) in enumerate(pbar):
             inputs = inputs.to(device)
 
+            # generate random crop for context encoder (ensuring minimum size after cropping)
             context_crop = get_image_crop(
                 image_size=int(CONFIG.img_size / CONFIG.patch_size),
                 min_img_size_after_crop=CONFIG.min_context_size,
             )
 
+            # generate random target blocks for the target encoder
             target_blocks = get_blocks(
                 image_size=CONFIG.img_size,
                 patch_size=CONFIG.patch_size,
@@ -118,12 +126,14 @@ def train(device):
                 number_of_blocks=CONFIG.number_of_blocks,
             )
 
-            loss, metrics = model(inputs, target_blocks, context_crop, step)
+            # forward pass through the model to compute loss and standard deviation metrics
+            loss, std_dev_list = model(inputs, target_blocks, context_crop, step)
             accum_lost += loss.item()
-            std_devs_accum_list += metrics[0]
+            std_devs_accum_list += std_dev_list
 
             loss.backward()
 
+            # adjust optimizer step and learning rate scheduler according to gradient accumulation
             if (step + 1) % CONFIG.grad_accum_steps == 0 or (step + 1) == len(
                 train_loader
             ):
@@ -132,13 +142,16 @@ def train(device):
                 scheduler.step()
                 optimizer.zero_grad()
 
-                global_step = (epoch * len(train_loader) / CONFIG.grad_accum_steps) + (
+                global_step = (epoch * steps_per_epoch) + (
                     step // CONFIG.grad_accum_steps
                 )
+                
+                # calculate the current tau value using a cosine schedule based on the global training step
                 current_tau = get_current_tau(
                     global_step, total_steps, CONFIG.tau_base, CONFIG.tau_end
                 )
 
+                # update the target encoder parameters using an exponential moving average
                 update_target_encoder(
                     model.context_encoder, model.target_encoder, tau=current_tau
                 )
@@ -156,11 +169,11 @@ def train(device):
                 #     pynvml.nvmlShutdown()
                 #     sys.exit(1)
                 # ...GPU monitoring end
-
-                features = metrics[1].to("cpu")
+                pass
 
         avg_loss = accum_lost / len(train_loader)
 
+        # save model checkpoints based on best loss and at regular intervals, and perform evaluations
         if avg_loss < best_loss:
             best_loss = avg_loss
             param_version = epoch
@@ -174,11 +187,13 @@ def train(device):
             path_to_save = f"{OUT_DIR_LATEST}/ijepa_stl10_{epoch}.pt"
             torch.save(model.state_dict(), path_to_save)
 
+        # perform k-NN evaluation every 10 epochs
         if epoch % 10 == 0:
             knn_acc = do_eval(
                 CONFIG.run_version, param_version, eval_type="knn", save_type=save_type, device=device
             )
 
+        # perform linear probe evaluation every 20 epochs and at the end of training
         if epoch % 20 == 0 or (epoch + 1) == CONFIG.epochs:
             lin_probe_acc = do_eval(
                 CONFIG.run_version,
@@ -188,12 +203,12 @@ def train(device):
                 device=device
             )
 
+        # log training metrics to Weights & Biases
         wandb_logger.log(   
             {
                 "Loss": avg_loss,
                 "Standard deviation of img tensors": sum(std_devs_accum_list)
                 / len(std_devs_accum_list),
-                "Feature distribution": wandb.Histogram(features),
                 "k-NN Accuracy": knn_acc,
                 "Linear probe Accuracy": lin_probe_acc,
             },

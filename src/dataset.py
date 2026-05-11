@@ -6,6 +6,11 @@ from config import CONFIG
 from utils import get_project_root
 
 def get_train_loader():
+    """Creates and returns a DataLoader for the STL10 training dataset with specified transformations.
+    
+    Returns:
+      torch.utils.data.DataLoader: A DataLoader object for the STL10 training dataset.
+    """
     transform = transforms.Compose(
         [
             transforms.RandomResizedCrop(96, (0.2, 1)),

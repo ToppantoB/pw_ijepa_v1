@@ -29,7 +29,7 @@ class Config:
     warmup_steps: int = 20
     """Warmup steps for training"""
     
-    tau_base: float = 0.98
+    tau_base: float = 0.985
     """Initial value of Tau for the EMA"""
     
     tau_end: float = 1.0
@@ -71,7 +71,7 @@ class Config:
     """Number of self-attention heads in each predictor block."""
     
     # Additional
-    run_version: int = 9999
+    run_version: int = 1
     """Version of the current run for WandB logs and artifact naming"""
 
 CONFIG = Config()
