@@ -3,6 +3,8 @@ import numpy as np
 import torch
 import math
 from config import CONFIG
+from pathlib import Path
+import warnings
 
 
 def get_block(image_size=96, patch_size=8, block_size=4):
@@ -106,35 +108,58 @@ def get_image_crop(image_size=12, min_img_size_after_crop=10):
 
 
 def update_target_encoder(context_encoder, target_encoder, tau):
+    """Updates the target encoder parameters using an exponential moving average (EMA).
+
+    Args:
+      context_encoder (torch.nn.Module): The actively trained context encoder.
+      target_encoder (torch.nn.Module): The target encoder to be updated in-place.
+      tau (float): The momentum parameter controlling the EMA update rate.
+    """
     with torch.no_grad():
         for context_params, target_params in zip(context_encoder.parameters(), target_encoder.parameters()):
             target_params.data.mul_(tau).add_(context_params.data, alpha=1.0 - tau)
             
             
 def get_current_tau(step, total_steps, base_tau=0.996, max_tau=1.0):
+    """Calculates the current momentum parameter (tau) using a cosine schedule.
+
+    Args:
+      step (int): The current training step.
+      total_steps (int): The total number of training steps.
+      base_tau (float, optional): The initial starting value for tau. Defaults to 0.996.
+      max_tau (float, optional): The maximum and final value for tau. Defaults to 1.0.
+
+    Returns:
+      float: The scheduled tau value for the current training step.
+    """
     return max_tau - (max_tau - base_tau) * (1 + math.cos(math.pi * step / total_steps)) / 2
 
 def get_parameter_groups(model):
+    """Separates model parameters into optimizer groups, selectively applying weight decay.
+
+    Args:
+      model (torch.nn.Module): The main model containing the context encoder and predictor.
+
+    Returns:
+      list: A list of dictionaries defining the parameter groups, learning rates, and weight decay schedules for the optimizer.
+    """
     decay_params = []
     no_decay_params = []
 
-    # Separate encoder parameters
     for name, param in model.context_encoder.named_parameters():
         if not param.requires_grad:
             continue
         
-        # Exclude biases and 1D parameters (e.g., LayerNorm weights) from decay
         if param.ndim <= 1 or name.endswith(".bias"):
             no_decay_params.append(param)
         else:
             decay_params.append(param)
 
-    # Construct the optimizer parameter groups
     return [
         {
             "params": decay_params,
             "lr": CONFIG.base_learning_rate,
-            "weight_decay": 0.01, # Initial weight decay
+            "weight_decay": 0.01,
             "apply_wd_schedule": True 
         },
         {
@@ -150,3 +175,34 @@ def get_parameter_groups(model):
             "apply_wd_schedule": False
         },
     ]
+    
+def get_project_root(anchor_file="requirements.txt"):
+    """
+    Traverses upwards from the current file to find the project root 
+    based on the presence of a specific anchor file/directory.
+    """
+    current_path = Path(__file__).resolve()
+    for parent in [current_path] + list(current_path.parents):
+        if (parent / anchor_file).exists():
+            return parent
+        
+    return current_path.parent
+
+def get_compute_device():
+    """
+    Returns the available computational device. Shows a warning in case CUDA is not available.
+    """
+    if torch.cuda.is_available():
+        return "cuda"
+    else:
+        YELLOW = "\033[93m"
+        RESET = "\033[0m"
+        
+        warnings.warn(
+            "\n" + "="*60 + 
+            f"{YELLOW}\nWARNING: CUDA is not available. Running on CPU is possible but highly impractical "
+            f"for this workload. It is strongly recommended to use an GPU with CUDA.{RESET}"
+            "\n" + "="*60,
+            UserWarning
+        )
+        return "cpu"

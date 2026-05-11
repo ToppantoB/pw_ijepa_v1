@@ -71,7 +71,7 @@ class Config:
     """Number of self-attention heads in each predictor block."""
     
     # Additional
-    run_version: int = 58
+    run_version: int = 9999
     """Version of the current run for WandB logs and artifact naming"""
 
 CONFIG = Config()

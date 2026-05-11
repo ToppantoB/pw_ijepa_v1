@@ -2,6 +2,8 @@ from torchvision import datasets, transforms
 import torch
 
 from config import CONFIG
+from utils import get_project_root
+
 
 eval_transform = transforms.Compose(
     [
@@ -12,11 +14,13 @@ eval_transform = transforms.Compose(
     ]
 )
 
+data_path = get_project_root() / "data"
+
 train_labeled_ds = datasets.STL10(
-    root="./data", split="train", transform=eval_transform, download=True
+    root=data_path, split="train", transform=eval_transform, download=True
 )
 
-test_ds = datasets.STL10(root="./data", split="test", transform=eval_transform)
+test_ds = datasets.STL10(root=data_path, split="test", transform=eval_transform)
 
 train_labeled_loader = torch.utils.data.DataLoader(train_labeled_ds, batch_size=CONFIG.batch_size)
 test_loader = torch.utils.data.DataLoader(test_ds, batch_size=CONFIG.batch_size)

@@ -1,10 +1,9 @@
 import torchvision
 import torch
 from torchvision import transforms
-import os
 
 from config import CONFIG
-
+from utils import get_project_root
 
 def get_train_loader():
     transform = transforms.Compose(
@@ -18,7 +17,7 @@ def get_train_loader():
         ]
     )
 
-    data_path = os.path.abspath("./data")
+    data_path = get_project_root() / "data"
 
     dataset = torchvision.datasets.STL10(
         root=data_path, split="unlabeled", download=True, transform=transform
