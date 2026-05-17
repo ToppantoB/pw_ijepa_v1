@@ -10,8 +10,9 @@ This project implements a scaled down version of the I-JEPA model for the *Pract
   git clone https://github.com/ToppantoB/pw_ijepa_v1.git
   cd pw_ijepa_v1
   ```
+2. Install PyTorch and TorchVision according to your system specifications from the [official PyTorch website](https://pytorch.org/get-started/locally/).
 
-2. Install the required dependencies:
+3. Install the remaining dependencies:
   ```bash
   pip install -r requirements.txt
   ```
@@ -72,5 +73,6 @@ The model and training parameters can be configured in the `config.py` file. To 
 ## Requirements
 
 - Python 3.8+
-- Dependencies listed in `requirements.txt` (install via pip as above)
-- CUDA enabled GPU for training and inference (optional but recommended)
+- PyTorch and TorchVision (Hardware-specific installation required prior to installing other requirements)
+- Additional dependencies listed in `requirements.txt` 
+- CUDA-enabled GPU for training and inference (optional but highly recommended)
