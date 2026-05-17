@@ -1,4 +1,5 @@
 import random
+import sys
 import numpy as np
 import torch
 import math
@@ -219,11 +220,10 @@ def get_compute_device():
         YELLOW = "\033[93m"
         RESET = "\033[0m"
         
-        warnings.warn(
-            "\n" + "="*60 + 
-            f"{YELLOW}\nWARNING: CUDA is not available. Running on CPU is possible but highly impractical "
-            f"for this workload. It is strongly recommended to use an GPU with CUDA.{RESET}"
-            "\n" + "="*60,
-            UserWarning
+        print(
+            "\n" + "="*60 +
+            f"{YELLOW}\nWARNING: CUDA is not available. Running on CPU is possible but highly impractical for this workload. It is strongly recommended to use an GPU with CUDA.{RESET}\n" +
+            "="*60,
+            file=sys.stderr
         )
         return "cpu"

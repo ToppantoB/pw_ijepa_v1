@@ -31,6 +31,6 @@ def get_encoder(path_to_params, encoder_config, device):
     }
 
     context_encoder.to(device)
-    context_encoder.load_state_dict(state_dict=vit_state_dict)
+    context_encoder.load_state_dict(state_dict=vit_state_dict, strict=False)
 
     return context_encoder
