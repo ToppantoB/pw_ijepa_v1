@@ -21,19 +21,19 @@ This project implements a scaled down version of the I-JEPA model for the *Pract
 
 Train the model with the command:
 ```bash
-python main.py
+python src/main.py
 ```
 This starts a training cycle according to the configuration that can be found in the `config.py` file. Training checkpoints are saved periodically to the `outputs` folder. See more at the [Configuration](#configuration) section.
 
 #### Evaluation
 You can evaluate a saved model with the following command:
 ```bash
-python main.py --eval --modelPath path/to/your/model.pt
+python src/main.py --eval --modelPath path/to/your/model.pt
 ```
 This will train a linear probe on top of the frozen encoder and evaluate its performance on the STL-10 test set.
 There is a model checkpoint included in the `saved_models` folder that you can use for evaluation. The checkpoint was trained for 220 epochs and achieves a linear probe accuracy of around 70% on the STL-10 test set. To evaluate this checkpoint, run the following command:
 ```bash
-python main.py --eval --modelPath saved_models/baseline.pt
+python src/main.py --eval --modelPath saved_models/baseline.pt
 ```
 
 
