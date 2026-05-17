@@ -10,8 +10,9 @@ This project implements a scaled down version of the I-JEPA model for the *Pract
   git clone https://github.com/ToppantoB/pw_ijepa_v1.git
   cd pw_ijepa_v1
   ```
+2. Install PyTorch and TorchVision according to your system specifications from the [official PyTorch website](https://pytorch.org/get-started/locally/).
 
-2. Install the required dependencies:
+3. Install the remaining dependencies:
   ```bash
   pip install -r requirements.txt
   ```
@@ -21,19 +22,19 @@ This project implements a scaled down version of the I-JEPA model for the *Pract
 
 Train the model with the command:
 ```bash
-python main.py
+python src/main.py
 ```
 This starts a training cycle according to the configuration that can be found in the `config.py` file. Training checkpoints are saved periodically to the `outputs` folder. See more at the [Configuration](#configuration) section.
 
 #### Evaluation
 You can evaluate a saved model with the following command:
 ```bash
-python main.py --eval --modelPath path/to/your/model.pt
+python src/main.py --eval --modelPath path/to/your/model.pt
 ```
 This will train a linear probe on top of the frozen encoder and evaluate its performance on the STL-10 test set.
 There is a model checkpoint included in the `saved_models` folder that you can use for evaluation. The checkpoint was trained for 220 epochs and achieves a linear probe accuracy of around 70% on the STL-10 test set. To evaluate this checkpoint, run the following command:
 ```bash
-python main.py --eval --modelPath saved_models/baseline.pt
+python src/main.py --eval --modelPath saved_models/baseline.pt
 ```
 
 
@@ -72,5 +73,6 @@ The model and training parameters can be configured in the `config.py` file. To 
 ## Requirements
 
 - Python 3.8+
-- Dependencies listed in `requirements.txt` (install via pip as above)
-- CUDA enabled GPU for training and inference (optional but recommended)
+- PyTorch and TorchVision (Hardware-specific installation required prior to installing other requirements)
+- Additional dependencies listed in `requirements.txt` 
+- CUDA-enabled GPU for training and inference (optional but highly recommended)
