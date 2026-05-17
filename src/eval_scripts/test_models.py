@@ -23,7 +23,7 @@ def get_encoder(path_to_params, encoder_config, device):
         mlp_dim=CONFIG.encoder_mlp_dim,
     )
 
-    state_dict = torch.load(path_to_params, weights_only=True)
+    state_dict = torch.load(path_to_params, map_location=torch.device(device), weights_only=True)
 
     prefix = "context_encoder."
     vit_state_dict = {
